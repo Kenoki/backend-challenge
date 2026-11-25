@@ -6,6 +6,8 @@ export interface AppDeps {
   logger?: Logger;
   httpLogger?: RequestHandler;
   registerRoutes?: (router: Router) => void;
+  /** Comprobación de la base; rechaza si no responde. Si se omite no se expone /health. */
+  checkDatabase?: () => Promise<void>;
 }
 
 interface BodyParserError extends Error {
@@ -26,6 +28,18 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use(express.json());
 
   const router = express.Router();
+  const { checkDatabase } = deps;
+  if (checkDatabase) {
+    router.get('/health', (_req: Request, res: Response) => {
+      checkDatabase().then(
+        () => res.status(200).json({ status: 'ok' }),
+        (err: unknown) => {
+          deps.logger?.error({ err }, 'Health check failed');
+          res.status(503).json({ error: 'Database unavailable' });
+        },
+      );
+    });
+  }
   deps.registerRoutes?.(router);
   app.use(router);
 

@@ -13,7 +13,7 @@ Cada tarea es una historia de usuario con criterios de aceptación verificables.
 | ✔ | Tarea | Depende de |
 |---|---|---|
 | [x] | [T01 · Esqueleto del proyecto](T01-esqueleto-del-proyecto.md) | — |
-| [ ] | [T02 · Base de datos, migraciones y `/health`](T02-base-de-datos-y-health.md) | T01 |
+| [x] | [T02 · Base de datos, migraciones y `/health`](T02-base-de-datos-y-health.md) | T01 |
 | [ ] | [T03 · Reloj del servicio](T03-reloj-del-servicio.md) | T01 |
 | [ ] | [T04 · Alta de clínicas](T04-alta-de-clinicas.md) | T02 |
 | [ ] | [T05 · Alta de pacientes](T05-alta-de-pacientes.md) | T04 |

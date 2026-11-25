@@ -1,7 +1,33 @@
-# Añade aquí tu servicio `api` (puerto 3000, CLOCK_MODE=test, PROVIDER_URL=http://provider:4010)
-# y su base de datos. El servicio `provider` no se modifica.
 services:
   provider:
     build: ./provider
     ports:
       - "4010:4010"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      CLOCK_MODE: test
+      PROVIDER_URL: http://provider:4010
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+    depends_on:
+      db:
+        condition: service_healthy
+      provider:
+        condition: service_started
