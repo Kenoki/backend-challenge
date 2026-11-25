@@ -28,7 +28,7 @@ Cada tarea es una historia de usuario con criterios de aceptación verificables.
 | [x] | [T14 · CI y calidad del código](T14-ci-y-calidad.md) | T01 |
 | [x] | [T15 · Instrucciones para agentes](T15-instrucciones-para-agentes.md) | T14 |
 | [x] | [T16 · README de entrega](T16-readme-de-entrega.md) | T13, T15 |
-| [ ] | [T17 · Entrega](T17-entrega.md) | T16 |
+| [x] | [T17 · Entrega](T17-entrega.md) | T16 |
 | [x] | [T18 · Crear la base de datos `clinicsay` si no existe](T18-crear-base-de-datos.md) | T02 |
 
 ## Flujo de trabajo con agentes
