@@ -2,6 +2,7 @@ import type { Kysely } from 'kysely';
 import type { ClinicRepository } from '../../application/ports/clinic-repository.js';
 import type { Clinic } from '../../domain/clinic.js';
 import { TimeZone } from '../../domain/time-zone.js';
+import { isUuid } from '../../domain/uuid.js';
 import type { Database } from './database.js';
 
 export class KyselyClinicRepository implements ClinicRepository {
@@ -15,6 +16,7 @@ export class KyselyClinicRepository implements ClinicRepository {
   }
 
   async findById(id: string): Promise<Clinic | null> {
+    if (!isUuid(id)) return null;
     const row = await this.db.selectFrom('clinics').selectAll().where('id', '=', id).executeTakeFirst();
     return row ? { id: row.id, name: row.name, timeZone: TimeZone.parse(row.timezone) } : null;
   }

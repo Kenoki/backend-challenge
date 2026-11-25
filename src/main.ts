@@ -6,6 +6,8 @@ import type { Clock } from './application/ports/clock.js';
 import { SystemClock } from './infrastructure/clock/system-clock.js';
 import { TestClock } from './infrastructure/clock/test-clock.js';
 import { makeCreateClinic } from './application/create-clinic.js';
+import { makeCreatePatient } from './application/create-patient.js';
+import { KyselyPatientRepository } from './infrastructure/db/kysely-patient-repository.js';
 import { createDb } from './infrastructure/db/database.js';
 import { KyselyClinicRepository } from './infrastructure/db/kysely-clinic-repository.js';
 import { migrate } from './infrastructure/db/migrator.js';
@@ -27,10 +29,14 @@ async function main(): Promise<void> {
 
   const db = createDb(pool);
   const clinics = new KyselyClinicRepository(db);
+  const patients = new KyselyPatientRepository(db);
 
   const app = createApp({
     logger,
-    useCases: { createClinic: makeCreateClinic({ clinics }) },
+    useCases: {
+      createClinic: makeCreateClinic({ clinics }),
+      createPatient: makeCreatePatient({ clinics, patients }),
+    },
     ...(testClock && { testClock }),
     httpLogger: pinoHttp({ logger }),
     checkDatabase: async () => {

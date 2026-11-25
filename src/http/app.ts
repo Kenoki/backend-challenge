@@ -2,13 +2,16 @@ import express, { type Express, type NextFunction, type Request, type RequestHan
 import type { Logger } from 'pino';
 import { ZodError } from 'zod';
 import type { CreateClinic } from '../application/create-clinic.js';
+import type { CreatePatient } from '../application/create-patient.js';
 import { DomainError, NotFoundError, ConflictError } from '../domain/errors.js';
 import { clinicsRouter } from './routes/clinics.js';
+import { patientsRouter } from './routes/patients.js';
 import { testClockRouter, type SettableClock } from './routes/test-clock.js';
 
 /** Casos de uso que la API expone; cada ruta se registra solo si su caso de uso está presente. */
 export interface UseCases {
   createClinic: CreateClinic;
+  createPatient: CreatePatient;
 }
 
 export interface AppDeps {
@@ -59,6 +62,7 @@ export function createApp(deps: AppDeps = {}): Express {
     });
   }
   if (deps.useCases?.createClinic) router.use(clinicsRouter(deps.useCases.createClinic));
+  if (deps.useCases?.createPatient) router.use(patientsRouter(deps.useCases.createPatient));
   if (deps.testClock) router.use(testClockRouter(deps.testClock));
   deps.registerRoutes?.(router);
   app.use(router);

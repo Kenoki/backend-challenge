@@ -16,7 +16,7 @@ Cada tarea es una historia de usuario con criterios de aceptación verificables.
 | [x] | [T02 · Base de datos, migraciones y `/health`](T02-base-de-datos-y-health.md) | T01 |
 | [x] | [T03 · Reloj del servicio](T03-reloj-del-servicio.md) | T01 |
 | [x] | [T04 · Alta de clínicas](T04-alta-de-clinicas.md) | T02 |
-| [ ] | [T05 · Alta de pacientes](T05-alta-de-pacientes.md) | T04 |
+| [x] | [T05 · Alta de pacientes](T05-alta-de-pacientes.md) | T04 |
 | [x] | [T06 · Hora de envío del recordatorio](T06-hora-de-envio.md) | T01 |
 | [ ] | [T07 · Crear y consultar citas](T07-crear-y-consultar-citas.md) | T03, T05, T06 |
 | [ ] | [T08 · Reprogramar citas](T08-reprogramar-citas.md) | T07 |
