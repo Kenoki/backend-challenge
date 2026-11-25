@@ -149,6 +149,7 @@ El puerto `Clock` se inyecta en los casos de uso. `TestClock` queda congelado en
 
 ## 6. Uso de la IA
 
+- **Skills.** Las dos que usé están versionadas en [`.claude/skills/`](.claude/skills/): `grill-with-docs` (junto con `grilling` y `domain-modeling`, que invoca) para el diseño, el glosario y los ADR, y `ub-mode` para implementar.
 - **Diseño.** Una sesión de preguntas (*grilling*) con Claude Opus cerró 22 decisiones antes de escribir código. Cambié Fastify por Express y acepté el resto. Después revisé y reescribí los ADR (renombré y amplié el 0001, añadí el 0002 y el 0003). En esa revisión la IA detectó dos huecos que se añadieron al ADR 0001: qué pasa si un envío en vuelo falla tras cancelar o reprogramar, y que el lease no puede usar el reloj de pruebas.
 - **Plan.** 17 historias de usuario con criterios de aceptación en [`docs/tasks/`](docs/tasks/README.md). Un orquestador (Claude Opus) y un implementador (Claude Sonnet) por tarea, con TDD y reglas *ub-mode*; el orquestador revisa, ejecuta la verificación y hace el commit.
 - **Correcciones sobre lo que propusieron los implementadores** (detalle en el registro de cada tarea):

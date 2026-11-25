@@ -76,6 +76,10 @@ Patrones obligatorios:
 
 ## Cómo trabajar
 
+Skills del proyecto en [`.claude/skills/`](.claude/skills/):
+- `/grill-with-docs`: entrevista por rondas para cerrar un diseño. Invoca `grilling` y `domain-modeling`, que mantiene `GLOSSARY.md` y los ADR de `docs/adr/`. Úsala antes de una decisión de diseño nueva.
+- `/ub-mode`: reglas de implementación (MIT, Robert C. Martin). Úsala al escribir o cambiar código.
+
 Reglas ub-mode (detalle en [`docs/tasks/README.md`](docs/tasks/README.md)):
 
 1. **Primero que funcione:** define la forma de los datos, escribe el test antes que el código y míralo fallar por la razón esperada; haz el cambio mínimo que lo pase; cada decisión vive en un solo sitio.
