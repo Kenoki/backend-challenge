@@ -1,9 +1,18 @@
 import express, { type Express, type NextFunction, type Request, type RequestHandler, type Response, type Router } from 'express';
 import type { Logger } from 'pino';
 import { ZodError } from 'zod';
+import type { CreateClinic } from '../application/create-clinic.js';
+import { DomainError, NotFoundError, ConflictError } from '../domain/errors.js';
+import { clinicsRouter } from './routes/clinics.js';
 import { testClockRouter, type SettableClock } from './routes/test-clock.js';
 
+/** Casos de uso que la API expone; cada ruta se registra solo si su caso de uso está presente. */
+export interface UseCases {
+  createClinic: CreateClinic;
+}
+
 export interface AppDeps {
+  useCases?: Partial<UseCases>;
   logger?: Logger;
   httpLogger?: RequestHandler;
   registerRoutes?: (router: Router) => void;
@@ -19,6 +28,12 @@ interface BodyParserError extends Error {
 
 function isInvalidJson(err: unknown): boolean {
   return err instanceof SyntaxError && (err as BodyParserError).type === 'entity.parse.failed';
+}
+
+function statusOf(err: DomainError): number {
+  if (err instanceof NotFoundError) return 404;
+  if (err instanceof ConflictError) return 409;
+  return 400;
 }
 
 function describeZodError(err: ZodError): string {
@@ -43,6 +58,7 @@ export function createApp(deps: AppDeps = {}): Express {
       );
     });
   }
+  if (deps.useCases?.createClinic) router.use(clinicsRouter(deps.useCases.createClinic));
   if (deps.testClock) router.use(testClockRouter(deps.testClock));
   deps.registerRoutes?.(router);
   app.use(router);
@@ -54,6 +70,10 @@ export function createApp(deps: AppDeps = {}): Express {
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (isInvalidJson(err)) {
       res.status(400).json({ error: 'Invalid JSON body' });
+      return;
+    }
+    if (err instanceof DomainError) {
+      res.status(statusOf(err)).json({ error: err.message });
       return;
     }
     if (err instanceof ZodError) {

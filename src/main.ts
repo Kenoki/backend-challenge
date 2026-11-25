@@ -5,6 +5,9 @@ import { createApp } from './http/app.js';
 import type { Clock } from './application/ports/clock.js';
 import { SystemClock } from './infrastructure/clock/system-clock.js';
 import { TestClock } from './infrastructure/clock/test-clock.js';
+import { makeCreateClinic } from './application/create-clinic.js';
+import { createDb } from './infrastructure/db/database.js';
+import { KyselyClinicRepository } from './infrastructure/db/kysely-clinic-repository.js';
 import { migrate } from './infrastructure/db/migrator.js';
 
 const port = Number(process.env['PORT'] ?? 3000);
@@ -22,8 +25,12 @@ async function main(): Promise<void> {
   const clock: Clock = testClock ?? new SystemClock();
   logger.info({ clockMode: testClock ? 'test' : 'system', now: clock.now().toISOString() }, 'Reloj del servicio');
 
+  const db = createDb(pool);
+  const clinics = new KyselyClinicRepository(db);
+
   const app = createApp({
     logger,
+    useCases: { createClinic: makeCreateClinic({ clinics }) },
     ...(testClock && { testClock }),
     httpLogger: pinoHttp({ logger }),
     checkDatabase: async () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ValidationError } from '../../src/domain/errors.js';
 import { TimeZone } from '../../src/domain/time-zone.js';
 
 describe('TimeZone', () => {
@@ -9,7 +10,7 @@ describe('TimeZone', () => {
   it.each(['', 'Madrid', 'Mars/Olympus', 'UTC+2', 'Europe/Madrid '])(
     'rechaza %j por no ser una zona IANA',
     (name) => {
-      expect(() => TimeZone.parse(name)).toThrow(/zona horaria/i);
+      expect(() => TimeZone.parse(name)).toThrow(ValidationError);
     },
   );
 });
