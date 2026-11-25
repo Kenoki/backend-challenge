@@ -28,7 +28,7 @@ Los tests unitarios (`test/unit`) no necesitan nada externo. Los de integración
 
 Variables de entorno (`.env.example`; no se carga ningún `.env` solo, expórtalas tú):
 
-- `DATABASE_URL`: obligatoria para arrancar la API. Los tests de integración usan `postgres://postgres:postgres@localhost:5432/postgres` si no se define.
+- `DATABASE_URL`: obligatoria para arrancar la API; si la base indicada no existe, el servicio la crea al arrancar (`infrastructure/db/ensure-database.ts`; `docker compose` usa `clinicsay`). Los tests de integración usan `postgres://postgres:postgres@localhost:5432/postgres` si no se define, es decir, su propia base distinta de `clinicsay`, para que sus `TRUNCATE` no la toquen.
 - `PROVIDER_URL`: por defecto `http://localhost:4010`.
 - `CLOCK_MODE=test`: habilita el reloj controlable `PUT /test/clock` (y es lo que usa `docker compose`). Sin ella, reloj del sistema.
 - `PORT` (3000) y `LOG_LEVEL` (`info`).
@@ -102,4 +102,4 @@ Cuándo documentar:
 - **Migraciones en el build:** los `.sql` de `src/infrastructure/db/migrations/` no los copia `tsc`; `npm run build` los copia a `dist/` y el `Dockerfile` ya ejecuta ese script. Si añades otro tipo de asset, cópialo igual.
 - **Imports ESM:** los imports relativos terminan en `.js` (NodeNext), aunque el archivo sea `.ts`.
 - **Windows/CRLF:** git convierte finales de línea (`core.autocrlf`); no reformatees archivos enteros por eso. Usa Git Bash para scripts POSIX.
-- **`/health` y migraciones:** la API migra al arrancar; los tests de integración llaman a `migrate` ellos mismos.
+- **`/health` y migraciones:** la API crea la base si falta y migra al arrancar; los tests de integración llaman a `migrate` ellos mismos.

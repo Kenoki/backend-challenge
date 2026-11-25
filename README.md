@@ -11,7 +11,7 @@ docker compose up --build        # api :3000 (CLOCK_MODE=test), db :5432, provid
 curl localhost:3000/health       # {"status":"ok"}
 ```
 
-Las migraciones corren al arrancar. Recorrido de ejemplo (Git Bash o Linux; comprobado contra `docker compose up --build -d`). Cita el domingo 28/03/2027 a las 10:00 de Madrid, el día del cambio de hora:
+Al arrancar, el servicio crea la base `clinicsay` si no existe (se conecta a la base `postgres` del mismo servidor) y luego aplica las migraciones; los tests de integración usan su propia base (`postgres` por defecto), así que sus `TRUNCATE` no tocan `clinicsay`. Recorrido de ejemplo (Git Bash o Linux; comprobado contra `docker compose up --build -d`). Cita el domingo 28/03/2027 a las 10:00 de Madrid, el día del cambio de hora:
 
 ```bash
 id() { sed -E 's/^\{"id":"([^"]+)".*/\1/'; }
@@ -158,7 +158,13 @@ El puerto `Clock` se inyecta en los casos de uso. `TestClock` queda congelado en
   - T06: el criterio se alineó con el tipo real (unión discriminada con `skipReason` solo en `skipped`).
   - T04: se reutilizó el value object `TimeZone` en lugar de validar la zona por segunda vez.
   - Para trabajar en paralelo, los implementadores usaron una base de datos separada, para evitar `TRUNCATE` cruzados.
-- Revisión del candidato: <!-- TODO candidato: completar qué corregiste tú -->
+- Revisión del candidato: 
+  - Stack: "Usar Express ya que en el enunciado no se menciona alguno en particular."
+  - ADRs: "Agregué otros 2 ADRs que se obtuvieron en otra sesión con la skill grill-me. Añadí el 0002, que conserva los recordatorios enviados al reprogramar, y el 0003, que usa Kysely en lugar de un ORM."
+  - Proceso: "Exigí un plan en historias de usuario con criterios de aceptación marcables antes de escribir código. También fijé el flujo de un orquestador (Opus) que revisa y un implementador (Sonnet) por tarea, siguiendo las reglas de ub-mode."
+  - CI: "Cuestioné la propuesta de actualizar las actions a v5: la IA confundía el Node con el que se ejecutan las actions con el Node 22 del proyecto. Al revisarlo, la versión correcta era v7, y se validó en el CI."
+  - Contrato: "Pedí verificar que la API cumpliera openapi.yaml. Se validaron 27 respuestas reales contra los esquemas, y la única diferencia era deliberada (400 en /test/clock)."
+  - Control del repo: "Decidí cuándo hacer commit y cuándo push, y comprobé que el CI pasara en develop antes de mergear a main."
 
 ## 7. Mapa del repositorio
 

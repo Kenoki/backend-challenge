@@ -19,6 +19,7 @@ import { KyselyUnitOfWork } from './infrastructure/db/kysely-unit-of-work.js';
 import { KyselyPatientRepository } from './infrastructure/db/kysely-patient-repository.js';
 import { createDb } from './infrastructure/db/database.js';
 import { KyselyClinicRepository } from './infrastructure/db/kysely-clinic-repository.js';
+import { ensureDatabase } from './infrastructure/db/ensure-database.js';
 import { migrate } from './infrastructure/db/migrator.js';
 import { HttpMessageProvider } from './infrastructure/provider/http-message-provider.js';
 
@@ -30,6 +31,7 @@ const logger = pino({ level: process.env['LOG_LEVEL'] ?? 'info' });
 
 async function main(): Promise<void> {
   if (!databaseUrl) throw new Error('DATABASE_URL es obligatoria');
+  if (await ensureDatabase(databaseUrl)) logger.info('Base de datos creada');
   const pool = new Pool({ connectionString: databaseUrl });
   await migrate(pool);
   logger.info('Migraciones aplicadas');
