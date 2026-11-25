@@ -17,7 +17,7 @@ Como integrador de ClinicSay, quiero dar de alta una clínica con su zona horari
 
 ## Notas para el implementador
 
-- La validez de la zona horaria es una regla de dominio. Crea un value object `TimeZone`, construido con Luxon (`IANAZone.isValidZone`), de modo que una zona inválida no se pueda representar.
+- La validez de la zona horaria ya vive en el value object `TimeZone` (`src/domain/time-zone.ts`, creado en T06). Reutilízalo, no dupliques la validación.
 - Caso de uso `CreateClinic` en `application`, repositorio `ClinicRepository` (puerto) con su implementación Kysely en `infrastructure`.
 
 ## Registro
