@@ -21,7 +21,7 @@ Cada tarea es una historia de usuario con criterios de aceptación verificables.
 | [x] | [T07 · Crear y consultar citas](T07-crear-y-consultar-citas.md) | T03, T05, T06 |
 | [x] | [T08 · Reprogramar citas](T08-reprogramar-citas.md) | T07 |
 | [x] | [T09 · Cancelar citas](T09-cancelar-citas.md) | T07 |
-| [ ] | [T10 · Pasada de envío](T10-pasada-de-envio.md) | T07 |
+| [x] | [T10 · Pasada de envío](T10-pasada-de-envio.md) | T07 |
 | [ ] | [T11 · Reintentos y fallos del proveedor](T11-reintentos-y-fallos-del-proveedor.md) | T10 |
 | [ ] | [T12 · Pasadas concurrentes y envíos en vuelo](T12-pasadas-concurrentes.md) | T11, T08, T09 |
 | [ ] | [T13 · Respuestas del paciente](T13-respuestas-del-paciente.md) | T10 |

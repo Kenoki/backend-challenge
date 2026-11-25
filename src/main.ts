@@ -11,15 +11,20 @@ import { makeCreateAppointment } from './application/create-appointment.js';
 import { makeCreatePatient } from './application/create-patient.js';
 import { makeGetAppointment } from './application/get-appointment.js';
 import { makeRescheduleAppointment } from './application/reschedule-appointment.js';
+import { makeRunReminders } from './application/run-reminders.js';
 import { KyselyAppointmentRepository } from './infrastructure/db/kysely-appointment-repository.js';
+import { KyselyReminderQueue } from './infrastructure/db/kysely-reminder-queue.js';
 import { KyselyUnitOfWork } from './infrastructure/db/kysely-unit-of-work.js';
 import { KyselyPatientRepository } from './infrastructure/db/kysely-patient-repository.js';
 import { createDb } from './infrastructure/db/database.js';
 import { KyselyClinicRepository } from './infrastructure/db/kysely-clinic-repository.js';
 import { migrate } from './infrastructure/db/migrator.js';
+import { HttpMessageProvider } from './infrastructure/provider/http-message-provider.js';
 
 const port = Number(process.env['PORT'] ?? 3000);
 const databaseUrl = process.env['DATABASE_URL'];
+// Por defecto, el proveedor fake de `docker compose` publicado en el host.
+const providerUrl = process.env['PROVIDER_URL'] ?? 'http://localhost:4010';
 const logger = pino({ level: process.env['LOG_LEVEL'] ?? 'info' });
 
 async function main(): Promise<void> {
@@ -38,6 +43,8 @@ async function main(): Promise<void> {
   const patients = new KyselyPatientRepository(db);
   const appointments = new KyselyAppointmentRepository(db);
   const unitOfWork = new KyselyUnitOfWork(db);
+  const provider = new HttpMessageProvider(providerUrl);
+  const reminderQueue = new KyselyReminderQueue(db);
 
   const app = createApp({
     logger,
@@ -48,6 +55,7 @@ async function main(): Promise<void> {
       getAppointment: makeGetAppointment({ appointments }),
       rescheduleAppointment: makeRescheduleAppointment({ unitOfWork, clock }),
       cancelAppointment: makeCancelAppointment({ unitOfWork }),
+      runReminders: makeRunReminders({ queue: reminderQueue, provider, clock }),
     },
     ...(testClock && { testClock }),
     httpLogger: pinoHttp({ logger }),

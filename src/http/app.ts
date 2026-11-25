@@ -7,9 +7,11 @@ import type { CreateAppointmentUseCase } from '../application/create-appointment
 import type { CreatePatient } from '../application/create-patient.js';
 import type { GetAppointment } from '../application/get-appointment.js';
 import type { RescheduleAppointmentUseCase } from '../application/reschedule-appointment.js';
+import type { RunRemindersUseCase } from '../application/run-reminders.js';
 import { DomainError, NotFoundError, ConflictError } from '../domain/errors.js';
 import { appointmentsRouter } from './routes/appointments.js';
 import { clinicsRouter } from './routes/clinics.js';
+import { jobsRouter } from './routes/jobs.js';
 import { patientsRouter } from './routes/patients.js';
 import { testClockRouter, type SettableClock } from './routes/test-clock.js';
 
@@ -21,6 +23,7 @@ export interface UseCases {
   getAppointment: GetAppointment;
   rescheduleAppointment: RescheduleAppointmentUseCase;
   cancelAppointment: CancelAppointmentUseCase;
+  runReminders: RunRemindersUseCase;
 }
 
 export interface AppDeps {
@@ -54,12 +57,14 @@ function describeZodError(err: ZodError): string {
 
 /** Cada router se registra solo si sus casos de uso están presentes. */
 function registerUseCaseRoutes(router: Router, useCases: Partial<UseCases>): void {
-  const { createClinic, createPatient, createAppointment, getAppointment, rescheduleAppointment, cancelAppointment } = useCases;
+  const { createClinic, createPatient, createAppointment, getAppointment, rescheduleAppointment, cancelAppointment, runReminders } =
+    useCases;
   if (createClinic) router.use(clinicsRouter(createClinic));
   if (createPatient) router.use(patientsRouter(createPatient));
   if (createAppointment && getAppointment && rescheduleAppointment && cancelAppointment) {
     router.use(appointmentsRouter({ createAppointment, getAppointment, rescheduleAppointment, cancelAppointment }));
   }
+  if (runReminders) router.use(jobsRouter(runReminders));
 }
 
 export function createApp(deps: AppDeps = {}): Express {
