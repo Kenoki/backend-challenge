@@ -1,0 +1,24 @@
+# Dependencias
+node_modules/
+
+# Build y cobertura
+dist/
+coverage/
+*.tsbuildinfo
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDE y sistema
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
