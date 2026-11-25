@@ -27,7 +27,7 @@ Cada tarea es una historia de usuario con criterios de aceptación verificables.
 | [x] | [T13 · Respuestas del paciente](T13-respuestas-del-paciente.md) | T10 |
 | [x] | [T14 · CI y calidad del código](T14-ci-y-calidad.md) | T01 |
 | [x] | [T15 · Instrucciones para agentes](T15-instrucciones-para-agentes.md) | T14 |
-| [ ] | [T16 · README de entrega](T16-readme-de-entrega.md) | T13, T15 |
+| [x] | [T16 · README de entrega](T16-readme-de-entrega.md) | T13, T15 |
 | [ ] | [T17 · Entrega](T17-entrega.md) | T16 |
 
 ## Flujo de trabajo con agentes
