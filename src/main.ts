@@ -5,10 +5,12 @@ import { createApp } from './http/app.js';
 import type { Clock } from './application/ports/clock.js';
 import { SystemClock } from './infrastructure/clock/system-clock.js';
 import { TestClock } from './infrastructure/clock/test-clock.js';
+import { makeCancelAppointment } from './application/cancel-appointment.js';
 import { makeCreateClinic } from './application/create-clinic.js';
 import { makeCreateAppointment } from './application/create-appointment.js';
 import { makeCreatePatient } from './application/create-patient.js';
 import { makeGetAppointment } from './application/get-appointment.js';
+import { makeRescheduleAppointment } from './application/reschedule-appointment.js';
 import { KyselyAppointmentRepository } from './infrastructure/db/kysely-appointment-repository.js';
 import { KyselyUnitOfWork } from './infrastructure/db/kysely-unit-of-work.js';
 import { KyselyPatientRepository } from './infrastructure/db/kysely-patient-repository.js';
@@ -44,6 +46,8 @@ async function main(): Promise<void> {
       createPatient: makeCreatePatient({ clinics, patients }),
       createAppointment: makeCreateAppointment({ unitOfWork, clock }),
       getAppointment: makeGetAppointment({ appointments }),
+      rescheduleAppointment: makeRescheduleAppointment({ unitOfWork, clock }),
+      cancelAppointment: makeCancelAppointment({ unitOfWork }),
     },
     ...(testClock && { testClock }),
     httpLogger: pinoHttp({ logger }),

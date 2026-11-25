@@ -1,4 +1,4 @@
-import type { Kysely, Selectable } from 'kysely';
+import { sql, type Kysely, type Selectable } from 'kysely';
 import type { AppointmentRepository } from '../../application/ports/appointment-repository.js';
 import type { Appointment } from '../../domain/appointment.js';
 import type { Reminder } from '../../domain/reminder.js';
@@ -47,25 +47,55 @@ export class KyselyAppointmentRepository implements AppointmentRepository {
         status: appointment.status,
       })
       .execute();
+    for (const reminder of appointment.reminders) await this.insertReminder(appointment.id, reminder);
+  }
+
+  async save(appointment: Appointment): Promise<Appointment> {
+    await this.db
+      .updateTable('appointments')
+      .set({ starts_at: appointment.startsAt, status: appointment.status })
+      .where('id', '=', appointment.id)
+      .execute();
+    const existing = await this.db.selectFrom('reminders').select('id').where('appointment_id', '=', appointment.id).execute();
+    const known = new Set(existing.map((row) => row.id));
     for (const reminder of appointment.reminders) {
-      await this.db
-        .insertInto('reminders')
-        .values({
-          id: reminder.id,
-          appointment_id: appointment.id,
-          for_starts_at: reminder.forStartsAt,
-          scheduled_for: reminder.scheduledFor,
-          next_attempt_at: reminder.nextAttemptAt,
-          status: reminder.status,
-          skip_reason: reminder.status === 'skipped' ? reminder.skipReason : null,
-          attempts: reminder.attempts,
-          sent_at: reminder.status === 'sent' ? reminder.sentAt : null,
-          sent_seq: null,
-          claim_token: null,
-          claimed_until: null,
-        })
-        .execute();
+      if (!known.has(reminder.id)) await this.insertReminder(appointment.id, reminder);
+      else if (reminder.status === 'cancelled') await this.cancelIfNotInFlight(reminder.id);
     }
+    const saved = await this.load(appointment.id, false);
+    if (!saved) throw new Error(`La cita desapareció al guardarla: ${appointment.id}`);
+    return saved;
+  }
+
+  private async insertReminder(appointmentId: string, reminder: Reminder): Promise<void> {
+    await this.db
+      .insertInto('reminders')
+      .values({
+        id: reminder.id,
+        appointment_id: appointmentId,
+        for_starts_at: reminder.forStartsAt,
+        scheduled_for: reminder.scheduledFor,
+        next_attempt_at: reminder.nextAttemptAt,
+        status: reminder.status,
+        skip_reason: reminder.status === 'skipped' ? reminder.skipReason : null,
+        attempts: reminder.attempts,
+        sent_at: reminder.status === 'sent' ? reminder.sentAt : null,
+        sent_seq: null,
+        claim_token: null,
+        claimed_until: null,
+      })
+      .execute();
+  }
+
+  /** Única definición de "en vuelo": un pending con claim vigente según el reloj de la base (ADR 0001) no se cancela. */
+  private async cancelIfNotInFlight(reminderId: string): Promise<void> {
+    await this.db
+      .updateTable('reminders')
+      .set({ status: 'cancelled' })
+      .where('id', '=', reminderId)
+      .where('status', '=', 'pending')
+      .where((eb) => eb.or([eb('claim_token', 'is', null), eb('claimed_until', '<=', sql<Date>`now()`)]))
+      .execute();
   }
 
   private async load(id: string, forUpdate: boolean): Promise<Appointment | null> {

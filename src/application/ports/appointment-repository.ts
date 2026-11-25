@@ -10,4 +10,11 @@ export interface AppointmentRepository {
   findByIdForUpdate(id: string): Promise<Appointment | null>;
   /** Inserta una cita nueva junto con todos sus recordatorios. */
   insert(appointment: Appointment): Promise<void>;
+  /**
+   * Persiste el agregado modificado de una cita existente (estado, inicio y recordatorios) y devuelve cómo queda guardado.
+   * Inserta los recordatorios nuevos y aplica a los `cancelled` la cancelación de pendientes, que NO alcanza a un
+   * recordatorio en vuelo (reclamado con `claim_token` y `claimed_until > now()` de la base): sigue `pending` (ADR 0001).
+   * Solo dentro de `UnitOfWork.run`, tras `findByIdForUpdate`.
+   */
+  save(appointment: Appointment): Promise<Appointment>;
 }
