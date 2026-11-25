@@ -1,4 +1,5 @@
 import { decideDelivery } from '../domain/delivery-decision.js';
+import { nextAttempt } from '../domain/retry-policy.js';
 import { reminderText } from '../domain/reminder-text.js';
 import { forEachLimited } from './for-each-limited.js';
 import type { Clock } from './ports/clock.js';
@@ -15,9 +16,6 @@ export interface RunRemindersDeps {
   concurrency?: number;
 }
 
-/** PLACEHOLDER de T10: tras un fallo transitorio el recordatorio espera 1 min. T11 lo sustituye por la política `nextAttempt`. */
-const PLACEHOLDER_RETRY_DELAY_MS = 60_000;
-
 /**
  * Caso de uso: una pasada de envío. Reclama los recordatorios vencidos por lotes, los procesa con
  * concurrencia limitada (la llamada al proveedor va fuera de toda transacción) y repite hasta que
@@ -26,7 +24,7 @@ const PLACEHOLDER_RETRY_DELAY_MS = 60_000;
 export function makeRunReminders(deps: RunRemindersDeps): RunRemindersUseCase {
   const { queue, provider, clock, batchSize = 50, concurrency = 10 } = deps;
 
-  /** Guarda el resultado del intento; el punto de enganche de T11 (reintentos) y T12 (en vuelo cancelado o no vigente). */
+  /** Guarda el resultado del intento; el punto de enganche de T12 (en vuelo cancelado o no vigente). */
   async function settle(reminder: ClaimedReminder, outcome: DeliveryOutcome): Promise<void> {
     switch (outcome.kind) {
       case 'delivered':
@@ -35,9 +33,13 @@ export function makeRunReminders(deps: RunRemindersDeps): RunRemindersUseCase {
       case 'rejected':
         await queue.markFailed(reminder);
         return;
-      case 'retryable':
-        await queue.scheduleRetry(reminder, new Date(clock.now().getTime() + PLACEHOLDER_RETRY_DELAY_MS));
+      case 'retryable': {
+        // El intento ya está contado (recordAttempt): attempts del reclamo + 1.
+        const retryAt = nextAttempt(reminder.attempts + 1, clock.now());
+        if (retryAt === 'give_up') await queue.markFailed(reminder);
+        else await queue.scheduleRetry(reminder, retryAt);
         return;
+      }
     }
   }
 
