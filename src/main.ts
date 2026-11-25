@@ -6,7 +6,11 @@ import type { Clock } from './application/ports/clock.js';
 import { SystemClock } from './infrastructure/clock/system-clock.js';
 import { TestClock } from './infrastructure/clock/test-clock.js';
 import { makeCreateClinic } from './application/create-clinic.js';
+import { makeCreateAppointment } from './application/create-appointment.js';
 import { makeCreatePatient } from './application/create-patient.js';
+import { makeGetAppointment } from './application/get-appointment.js';
+import { KyselyAppointmentRepository } from './infrastructure/db/kysely-appointment-repository.js';
+import { KyselyUnitOfWork } from './infrastructure/db/kysely-unit-of-work.js';
 import { KyselyPatientRepository } from './infrastructure/db/kysely-patient-repository.js';
 import { createDb } from './infrastructure/db/database.js';
 import { KyselyClinicRepository } from './infrastructure/db/kysely-clinic-repository.js';
@@ -22,7 +26,7 @@ async function main(): Promise<void> {
   await migrate(pool);
   logger.info('Migraciones aplicadas');
 
-  // Única instancia del reloj; se inyectará en los casos de uso que necesiten la hora.
+  // Única instancia del reloj; se inyecta en los casos de uso que necesitan la hora.
   const testClock = process.env['CLOCK_MODE'] === 'test' ? new TestClock() : undefined;
   const clock: Clock = testClock ?? new SystemClock();
   logger.info({ clockMode: testClock ? 'test' : 'system', now: clock.now().toISOString() }, 'Reloj del servicio');
@@ -30,12 +34,16 @@ async function main(): Promise<void> {
   const db = createDb(pool);
   const clinics = new KyselyClinicRepository(db);
   const patients = new KyselyPatientRepository(db);
+  const appointments = new KyselyAppointmentRepository(db);
+  const unitOfWork = new KyselyUnitOfWork(db);
 
   const app = createApp({
     logger,
     useCases: {
       createClinic: makeCreateClinic({ clinics }),
       createPatient: makeCreatePatient({ clinics, patients }),
+      createAppointment: makeCreateAppointment({ unitOfWork, clock }),
+      getAppointment: makeGetAppointment({ appointments }),
     },
     ...(testClock && { testClock }),
     httpLogger: pinoHttp({ logger }),

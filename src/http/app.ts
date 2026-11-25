@@ -2,8 +2,11 @@ import express, { type Express, type NextFunction, type Request, type RequestHan
 import type { Logger } from 'pino';
 import { ZodError } from 'zod';
 import type { CreateClinic } from '../application/create-clinic.js';
+import type { CreateAppointmentUseCase } from '../application/create-appointment.js';
 import type { CreatePatient } from '../application/create-patient.js';
+import type { GetAppointment } from '../application/get-appointment.js';
 import { DomainError, NotFoundError, ConflictError } from '../domain/errors.js';
+import { appointmentsRouter } from './routes/appointments.js';
 import { clinicsRouter } from './routes/clinics.js';
 import { patientsRouter } from './routes/patients.js';
 import { testClockRouter, type SettableClock } from './routes/test-clock.js';
@@ -12,6 +15,8 @@ import { testClockRouter, type SettableClock } from './routes/test-clock.js';
 export interface UseCases {
   createClinic: CreateClinic;
   createPatient: CreatePatient;
+  createAppointment: CreateAppointmentUseCase;
+  getAppointment: GetAppointment;
 }
 
 export interface AppDeps {
@@ -43,6 +48,14 @@ function describeZodError(err: ZodError): string {
   return err.issues.map((issue) => `${issue.path.join('.') || 'body'}: ${issue.message}`).join('; ');
 }
 
+/** Cada router se registra solo si sus casos de uso están presentes. */
+function registerUseCaseRoutes(router: Router, useCases: Partial<UseCases>): void {
+  const { createClinic, createPatient, createAppointment, getAppointment } = useCases;
+  if (createClinic) router.use(clinicsRouter(createClinic));
+  if (createPatient) router.use(patientsRouter(createPatient));
+  if (createAppointment && getAppointment) router.use(appointmentsRouter({ createAppointment, getAppointment }));
+}
+
 export function createApp(deps: AppDeps = {}): Express {
   const app = express();
   if (deps.httpLogger) app.use(deps.httpLogger);
@@ -61,8 +74,7 @@ export function createApp(deps: AppDeps = {}): Express {
       );
     });
   }
-  if (deps.useCases?.createClinic) router.use(clinicsRouter(deps.useCases.createClinic));
-  if (deps.useCases?.createPatient) router.use(patientsRouter(deps.useCases.createPatient));
+  registerUseCaseRoutes(router, deps.useCases ?? {});
   if (deps.testClock) router.use(testClockRouter(deps.testClock));
   deps.registerRoutes?.(router);
   app.use(router);

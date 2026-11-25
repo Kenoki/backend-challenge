@@ -18,7 +18,7 @@ Cada tarea es una historia de usuario con criterios de aceptación verificables.
 | [x] | [T04 · Alta de clínicas](T04-alta-de-clinicas.md) | T02 |
 | [x] | [T05 · Alta de pacientes](T05-alta-de-pacientes.md) | T04 |
 | [x] | [T06 · Hora de envío del recordatorio](T06-hora-de-envio.md) | T01 |
-| [ ] | [T07 · Crear y consultar citas](T07-crear-y-consultar-citas.md) | T03, T05, T06 |
+| [x] | [T07 · Crear y consultar citas](T07-crear-y-consultar-citas.md) | T03, T05, T06 |
 | [ ] | [T08 · Reprogramar citas](T08-reprogramar-citas.md) | T07 |
 | [ ] | [T09 · Cancelar citas](T09-cancelar-citas.md) | T07 |
 | [ ] | [T10 · Pasada de envío](T10-pasada-de-envio.md) | T07 |
