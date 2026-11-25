@@ -36,6 +36,23 @@ export class KyselyAppointmentRepository implements AppointmentRepository {
     return this.load(id, true);
   }
 
+  async findReplyTargetId(phone: string, now: Date): Promise<string | null> {
+    const row = await this.db
+      .selectFrom('reminders as r')
+      .innerJoin('appointments as a', 'a.id', 'r.appointment_id')
+      .innerJoin('patients as p', 'p.id', 'a.patient_id')
+      .select('a.id')
+      .where('r.status', '=', 'sent')
+      .where('p.phone', '=', phone)
+      .where('a.status', '<>', 'cancelled')
+      .where('a.starts_at', '>', now)
+      .orderBy('r.sent_at', 'desc')
+      .orderBy('r.sent_seq', (ob) => ob.desc().nullsLast())
+      .limit(1)
+      .executeTakeFirst();
+    return row?.id ?? null;
+  }
+
   async insert(appointment: Appointment): Promise<void> {
     await this.db
       .insertInto('appointments')

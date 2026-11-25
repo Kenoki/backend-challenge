@@ -24,7 +24,7 @@ Cada tarea es una historia de usuario con criterios de aceptación verificables.
 | [x] | [T10 · Pasada de envío](T10-pasada-de-envio.md) | T07 |
 | [x] | [T11 · Reintentos y fallos del proveedor](T11-reintentos-y-fallos-del-proveedor.md) | T10 |
 | [ ] | [T12 · Pasadas concurrentes y envíos en vuelo](T12-pasadas-concurrentes.md) | T11, T08, T09 |
-| [ ] | [T13 · Respuestas del paciente](T13-respuestas-del-paciente.md) | T10 |
+| [x] | [T13 · Respuestas del paciente](T13-respuestas-del-paciente.md) | T10 |
 | [x] | [T14 · CI y calidad del código](T14-ci-y-calidad.md) | T01 |
 | [ ] | [T15 · Instrucciones para agentes](T15-instrucciones-para-agentes.md) | T14 |
 | [ ] | [T16 · README de entrega](T16-readme-de-entrega.md) | T13, T15 |

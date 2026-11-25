@@ -3,6 +3,7 @@ import type { Repositories, UnitOfWork } from '../../application/ports/unit-of-w
 import type { Database } from './database.js';
 import { KyselyAppointmentRepository } from './kysely-appointment-repository.js';
 import { KyselyClinicRepository } from './kysely-clinic-repository.js';
+import { KyselyInboundMessageRepository } from './kysely-inbound-message-repository.js';
 import { KyselyPatientRepository } from './kysely-patient-repository.js';
 
 /** Unidad de trabajo sobre `db.transaction()`: los repositorios de `work` comparten la transacción. */
@@ -15,6 +16,7 @@ export class KyselyUnitOfWork implements UnitOfWork {
         clinics: new KyselyClinicRepository(trx),
         patients: new KyselyPatientRepository(trx),
         appointments: new KyselyAppointmentRepository(trx),
+        inboundMessages: new KyselyInboundMessageRepository(trx),
       }),
     );
   }

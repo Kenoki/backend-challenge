@@ -17,4 +17,10 @@ export interface AppointmentRepository {
    * Solo dentro de `UnitOfWork.run`, tras `findByIdForUpdate`.
    */
   save(appointment: Appointment): Promise<Appointment>;
+  /**
+   * Id de la cita destino de una respuesta desde `phone`: la del recordatorio `sent` con mayor (`sent_at`, `sent_seq`)
+   * enviado a ese teléfono, entre las citas no canceladas y con inicio posterior a `now`. `null` si no hay ninguna.
+   * No bloquea: quien la use debe bloquear la cita con `findByIdForUpdate` y volver a comprobarla.
+   */
+  findReplyTargetId(phone: string, now: Date): Promise<string | null>;
 }

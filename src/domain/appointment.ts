@@ -93,3 +93,14 @@ export function cancelAppointment(appointment: Appointment): Appointment {
   if (appointment.status === 'cancelled') return appointment;
   return { ...appointment, status: 'cancelled', reminders: cancelPending(appointment.reminders) };
 }
+
+/** Confirma una cita `scheduled`. Idempotente: `confirmed` se devuelve tal cual; una cancelada no se toca. */
+export function confirmAppointment(appointment: Appointment): Appointment {
+  if (appointment.status !== 'scheduled') return appointment;
+  return { ...appointment, status: 'confirmed' };
+}
+
+/** Una respuesta del paciente solo aplica a una cita no cancelada y no empezada (inicio estrictamente posterior a `now`). */
+export function canReceiveReply(appointment: Appointment, now: Date): boolean {
+  return appointment.status !== 'cancelled' && appointment.startsAt.getTime() > now.getTime();
+}

@@ -10,6 +10,7 @@ import { makeCreateClinic } from './application/create-clinic.js';
 import { makeCreateAppointment } from './application/create-appointment.js';
 import { makeCreatePatient } from './application/create-patient.js';
 import { makeGetAppointment } from './application/get-appointment.js';
+import { makeHandleInboundMessage } from './application/handle-inbound-message.js';
 import { makeRescheduleAppointment } from './application/reschedule-appointment.js';
 import { makeRunReminders } from './application/run-reminders.js';
 import { KyselyAppointmentRepository } from './infrastructure/db/kysely-appointment-repository.js';
@@ -55,6 +56,7 @@ async function main(): Promise<void> {
       getAppointment: makeGetAppointment({ appointments }),
       rescheduleAppointment: makeRescheduleAppointment({ unitOfWork, clock }),
       cancelAppointment: makeCancelAppointment({ unitOfWork }),
+      handleInboundMessage: makeHandleInboundMessage({ unitOfWork, clock }),
       runReminders: makeRunReminders({ queue: reminderQueue, provider, clock }),
     },
     ...(testClock && { testClock }),
