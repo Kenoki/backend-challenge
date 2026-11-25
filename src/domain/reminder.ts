@@ -1,3 +1,5 @@
+import type { AppointmentStatus } from './appointment.js';
+
 export type SkipReason = 'too_late' | 'no_phone' | 'opted_out';
 
 interface ReminderBase {
@@ -21,3 +23,17 @@ export type Reminder =
   | (ReminderBase & { readonly status: 'cancelled' });
 
 export type ReminderStatus = Reminder['status'];
+
+export interface CurrencyInput {
+  readonly forStartsAt: Date;
+  readonly appointmentStartsAt: Date;
+  readonly appointmentStatus: AppointmentStatus;
+}
+
+/**
+ * Un recordatorio es el vigente mientras su cita siga viva y conserve la hora para la que se creó.
+ * Si la cita se canceló o se reprogramó, ya no tiene sentido enviarlo ni reintentarlo (ADR 0001).
+ */
+export function isCurrent({ forStartsAt, appointmentStartsAt, appointmentStatus }: CurrencyInput): boolean {
+  return appointmentStatus !== 'cancelled' && forStartsAt.getTime() === appointmentStartsAt.getTime();
+}

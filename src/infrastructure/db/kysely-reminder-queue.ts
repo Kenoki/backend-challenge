@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { sql, type Kysely, type UpdateObject } from 'kysely';
-import type { ClaimedReminder, ReminderQueue } from '../../application/ports/reminder-queue.js';
-import type { SkipReason } from '../../domain/reminder.js';
+import type { ClaimedReminder, FailedAttempt, ReminderQueue } from '../../application/ports/reminder-queue.js';
+import type { AppointmentStatus } from '../../domain/appointment.js';
+import { isCurrent, type SkipReason } from '../../domain/reminder.js';
 import { TimeZone } from '../../domain/time-zone.js';
 import type { Database } from './database.js';
 
@@ -11,7 +12,9 @@ const LEASE_SECONDS = 60;
 interface ClaimedRow {
   id: string;
   attempts: number;
+  for_starts_at: Date;
   starts_at: Date;
+  appointment_status: AppointmentStatus;
   patient_name: string;
   phone: string | null;
   accepts_reminders: boolean;
@@ -20,6 +23,11 @@ interface ClaimedRow {
 }
 
 const RELEASED = { claim_token: null, claimed_until: null } as const;
+const CANCELLED = { status: 'cancelled', ...RELEASED } as const;
+
+function failedAttemptChanges(next: FailedAttempt): UpdateObject<Database, 'reminders'> {
+  return next.kind === 'retry' ? { next_attempt_at: next.at, ...RELEASED } : { status: 'failed', ...RELEASED };
+}
 
 export class KyselyReminderQueue implements ReminderQueue {
   constructor(private readonly db: Kysely<Database>) {}
@@ -40,9 +48,9 @@ export class KyselyReminderQueue implements ReminderQueue {
           FOR UPDATE SKIP LOCKED
           LIMIT ${limit}
         )
-        RETURNING id, appointment_id, attempts
+        RETURNING id, appointment_id, attempts, for_starts_at
       )
-      SELECT c.id, c.attempts, a.starts_at,
+      SELECT c.id, c.attempts, c.for_starts_at, a.starts_at, a.status AS appointment_status,
              p.name AS patient_name, p.phone, p.accepts_reminders,
              cl.name AS clinic_name, cl.timezone
       FROM claimed c
@@ -53,6 +61,8 @@ export class KyselyReminderQueue implements ReminderQueue {
       id: row.id,
       claimToken,
       attempts: row.attempts,
+      forStartsAt: row.for_starts_at,
+      appointmentStatus: row.appointment_status,
       appointmentStartsAt: row.starts_at,
       patientName: row.patient_name,
       phone: row.phone,
@@ -63,11 +73,11 @@ export class KyselyReminderQueue implements ReminderQueue {
   }
 
   recordAttempt(reminder: ClaimedReminder): Promise<boolean> {
-    return this.ifStillClaimed(reminder, { attempts: sql<number>`attempts + 1` });
+    return this.ifStillClaimed(this.db, reminder, { attempts: sql<number>`attempts + 1` });
   }
 
   markSent(reminder: ClaimedReminder, sentAt: Date): Promise<boolean> {
-    return this.ifStillClaimed(reminder, {
+    return this.ifStillClaimed(this.db, reminder, {
       status: 'sent',
       sent_at: sentAt,
       sent_seq: sql<string>`nextval('reminder_sent_seq')`,
@@ -76,23 +86,43 @@ export class KyselyReminderQueue implements ReminderQueue {
   }
 
   markSkipped(reminder: ClaimedReminder, reason: SkipReason): Promise<boolean> {
-    return this.ifStillClaimed(reminder, { status: 'skipped', skip_reason: reason, ...RELEASED });
+    return this.ifStillClaimed(this.db, reminder, { status: 'skipped', skip_reason: reason, ...RELEASED });
   }
 
-  markFailed(reminder: ClaimedReminder): Promise<boolean> {
-    return this.ifStillClaimed(reminder, { status: 'failed', ...RELEASED });
+  markCancelled(reminder: ClaimedReminder): Promise<boolean> {
+    return this.ifStillClaimed(this.db, reminder, CANCELLED);
   }
 
-  scheduleRetry(reminder: ClaimedReminder, nextAttemptAt: Date): Promise<boolean> {
-    return this.ifStillClaimed(reminder, { next_attempt_at: nextAttemptAt, ...RELEASED });
+  /**
+   * Lee la cita con FOR SHARE y escribe en la misma transacción: cancelar o reprogramar bloquean la cita
+   * con FOR UPDATE, así que o ocurren antes (y se ven aquí) o esperan a que esta escritura termine.
+   * Si una cancelación concurrente aún no se ha confirmado, el reclamo del reintento la detecta.
+   */
+  settleFailedAttempt(reminder: ClaimedReminder, next: FailedAttempt): Promise<boolean> {
+    return this.db.transaction().execute(async (trx) => {
+      const { rows } = await sql<{ for_starts_at: Date; starts_at: Date; status: AppointmentStatus }>`
+        SELECT r.for_starts_at, a.starts_at, a.status
+        FROM reminders r JOIN appointments a ON a.id = r.appointment_id
+        WHERE r.id = ${reminder.id} AND r.claim_token = ${reminder.claimToken}
+        FOR SHARE OF a`.execute(trx);
+      const fresh = rows[0];
+      if (!fresh) return false;
+      const stillCurrent = isCurrent({
+        forStartsAt: fresh.for_starts_at,
+        appointmentStartsAt: fresh.starts_at,
+        appointmentStatus: fresh.status,
+      });
+      return this.ifStillClaimed(trx, reminder, stillCurrent ? failedAttemptChanges(next) : CANCELLED);
+    });
   }
 
   /** Única escritura de resultado: solo afecta a la fila si el `claim_token` sigue siendo el de esta pasada. */
   private async ifStillClaimed(
+    executor: Kysely<Database>,
     reminder: ClaimedReminder,
     changes: UpdateObject<Database, 'reminders'>,
   ): Promise<boolean> {
-    const result = await this.db
+    const result = await executor
       .updateTable('reminders')
       .set(changes)
       .where('id', '=', reminder.id)

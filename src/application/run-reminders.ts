@@ -1,5 +1,6 @@
 import { decideDelivery } from '../domain/delivery-decision.js';
 import { nextAttempt } from '../domain/retry-policy.js';
+import { isCurrent } from '../domain/reminder.js';
 import { reminderText } from '../domain/reminder-text.js';
 import { forEachLimited } from './for-each-limited.js';
 import type { Clock } from './ports/clock.js';
@@ -24,26 +25,29 @@ export interface RunRemindersDeps {
 export function makeRunReminders(deps: RunRemindersDeps): RunRemindersUseCase {
   const { queue, provider, clock, batchSize = 50, concurrency = 10 } = deps;
 
-  /** Guarda el resultado del intento; el punto de enganche de T12 (en vuelo cancelado o no vigente). */
+  /** Guarda el resultado del intento; los no entregados los resuelve la cola con el estado de la cita al escribir. */
   async function settle(reminder: ClaimedReminder, outcome: DeliveryOutcome): Promise<void> {
     switch (outcome.kind) {
       case 'delivered':
         await queue.markSent(reminder, clock.now());
         return;
       case 'rejected':
-        await queue.markFailed(reminder);
+        await queue.settleFailedAttempt(reminder, { kind: 'fail' });
         return;
       case 'retryable': {
         // El intento ya está contado (recordAttempt): attempts del reclamo + 1.
         const retryAt = nextAttempt(reminder.attempts + 1, clock.now());
-        if (retryAt === 'give_up') await queue.markFailed(reminder);
-        else await queue.scheduleRetry(reminder, retryAt);
+        await queue.settleFailedAttempt(reminder, retryAt === 'give_up' ? { kind: 'fail' } : { kind: 'retry', at: retryAt });
         return;
       }
     }
   }
 
   async function process(reminder: ClaimedReminder): Promise<void> {
+    if (!isCurrent(reminder)) {
+      await queue.markCancelled(reminder);
+      return;
+    }
     const decision = decideDelivery({
       appointmentStartsAt: reminder.appointmentStartsAt,
       now: clock.now(),
