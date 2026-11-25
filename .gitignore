@@ -22,3 +22,7 @@ npm-debug.log*
 *.swp
 .DS_Store
 Thumbs.db
+
+# Stryker
+.stryker-tmp/
+reports/

@@ -23,7 +23,7 @@ const noSystemClock = [
 ];
 
 export default tseslint.config(
-  { ignores: ['provider/**', 'dist/**', 'coverage/**', 'node_modules/**'] },
+  { ignores: ['provider/**', 'dist/**', 'coverage/**', 'node_modules/**', '.stryker-tmp/**', 'reports/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
