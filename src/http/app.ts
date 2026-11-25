@@ -1,6 +1,7 @@
 import express, { type Express, type NextFunction, type Request, type RequestHandler, type Response, type Router } from 'express';
 import type { Logger } from 'pino';
 import { ZodError } from 'zod';
+import { testClockRouter, type SettableClock } from './routes/test-clock.js';
 
 export interface AppDeps {
   logger?: Logger;
@@ -8,6 +9,8 @@ export interface AppDeps {
   registerRoutes?: (router: Router) => void;
   /** Comprobación de la base; rechaza si no responde. Si se omite no se expone /health. */
   checkDatabase?: () => Promise<void>;
+  /** Reloj fijable. Solo si se inyecta se expone PUT /test/clock (CLOCK_MODE=test). */
+  testClock?: SettableClock;
 }
 
 interface BodyParserError extends Error {
@@ -40,6 +43,7 @@ export function createApp(deps: AppDeps = {}): Express {
       );
     });
   }
+  if (deps.testClock) router.use(testClockRouter(deps.testClock));
   deps.registerRoutes?.(router);
   app.use(router);
 

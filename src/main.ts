@@ -2,6 +2,9 @@ import { Pool } from 'pg';
 import { pino } from 'pino';
 import { pinoHttp } from 'pino-http';
 import { createApp } from './http/app.js';
+import type { Clock } from './application/ports/clock.js';
+import { SystemClock } from './infrastructure/clock/system-clock.js';
+import { TestClock } from './infrastructure/clock/test-clock.js';
 import { migrate } from './infrastructure/db/migrator.js';
 
 const port = Number(process.env['PORT'] ?? 3000);
@@ -14,8 +17,14 @@ async function main(): Promise<void> {
   await migrate(pool);
   logger.info('Migraciones aplicadas');
 
+  // Única instancia del reloj; se inyectará en los casos de uso que necesiten la hora.
+  const testClock = process.env['CLOCK_MODE'] === 'test' ? new TestClock() : undefined;
+  const clock: Clock = testClock ?? new SystemClock();
+  logger.info({ clockMode: testClock ? 'test' : 'system', now: clock.now().toISOString() }, 'Reloj del servicio');
+
   const app = createApp({
     logger,
+    ...(testClock && { testClock }),
     httpLogger: pinoHttp({ logger }),
     checkDatabase: async () => {
       await pool.query('SELECT 1');
