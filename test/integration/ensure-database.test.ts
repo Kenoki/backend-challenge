@@ -1,10 +1,11 @@
+import { TEST_DATABASE_URL } from '../support/database-url.js';
 import { randomUUID } from 'node:crypto';
 import { Client } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
 import { ensureDatabase } from '../../src/infrastructure/db/ensure-database.js';
 
 const baseUrl =
-  process.env['DATABASE_URL'] ?? 'postgres://postgres:postgres@localhost:5432/postgres';
+  TEST_DATABASE_URL;
 
 function urlFor(dbName: string): string {
   const url = new URL(baseUrl);

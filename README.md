@@ -11,7 +11,7 @@ docker compose up --build        # api :3000 (CLOCK_MODE=test), db :5432, provid
 curl localhost:3000/health       # {"status":"ok"}
 ```
 
-Al arrancar, el servicio crea la base `clinicsay` si no existe (se conecta a la base `postgres` del mismo servidor) y luego aplica las migraciones; los tests de integración usan su propia base (`postgres` por defecto), así que sus `TRUNCATE` no tocan `clinicsay`. Recorrido de ejemplo (Git Bash o Linux; comprobado contra `docker compose up --build -d`). Cita el domingo 28/03/2027 a las 10:00 de Madrid, el día del cambio de hora:
+Al arrancar, el servicio crea la base `clinicsay` si no existe (se conecta a la base `postgres` del mismo servidor) y luego aplica las migraciones; los tests de integración usan también `clinicsay` (la crean si falta) y hacen `TRUNCATE` de sus tablas, así que `npm test` borra los datos que hayas creado a mano. Recorrido de ejemplo (Git Bash o Linux; comprobado contra `docker compose up --build -d`). Cita el domingo 28/03/2027 a las 10:00 de Madrid, el día del cambio de hora:
 
 ```bash
 id() { sed -E 's/^\{"id":"([^"]+)".*/\1/'; }

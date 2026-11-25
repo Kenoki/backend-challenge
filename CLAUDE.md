@@ -28,7 +28,7 @@ Los tests unitarios (`test/unit`) no necesitan nada externo. Los de integración
 
 Variables de entorno (`.env.example`; no se carga ningún `.env` solo, expórtalas tú):
 
-- `DATABASE_URL`: obligatoria para arrancar la API; si la base indicada no existe, el servicio la crea al arrancar (`infrastructure/db/ensure-database.ts`; `docker compose` usa `clinicsay`). Los tests de integración usan `postgres://postgres:postgres@localhost:5432/postgres` si no se define, es decir, su propia base distinta de `clinicsay`, para que sus `TRUNCATE` no la toquen.
+- `DATABASE_URL`: obligatoria para arrancar la API; si la base indicada no existe, el servicio la crea al arrancar (`infrastructure/db/ensure-database.ts`; `docker compose` usa `clinicsay`). Los tests de integración usan `postgres://postgres:postgres@localhost:5432/clinicsay` si no se define (un único sitio: `test/support/database-url.ts`), y `test/support/global-setup.ts` crea esa base antes de ejecutarlos si no existe. Como hacen `TRUNCATE`, `npm test` borra los datos que hayas creado a mano en `clinicsay`.
 - `PROVIDER_URL`: por defecto `http://localhost:4010`.
 - `CLOCK_MODE=test`: habilita el reloj controlable `PUT /test/clock` (y es lo que usa `docker compose`). Sin ella, reloj del sistema.
 - `PORT` (3000) y `LOG_LEVEL` (`info`).

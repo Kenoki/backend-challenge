@@ -14,7 +14,7 @@ Como operador, quiero que el servicio cree su base de datos `clinicsay` al arran
 - [x] Si dos instancias intentan crearla a la vez, ninguna falla: se ignora el error de base duplicada (`42P04`, o `23505` si chocan en el catálogo).
 - [x] El nombre de la base se escapa como identificador; nunca se interpola sin escapar.
 - [x] `docker-compose.yml` y `.env.example` usan `.../clinicsay` en `DATABASE_URL`, y `docker compose up --build` arranca con `/health` = 200 sobre una base `clinicsay` recién creada.
-- [x] Los tests de integración siguen usando su propia base (por defecto `postgres`), para que sus `TRUNCATE` no toquen `clinicsay`.
+- [x] Los tests de integración usan también `clinicsay` por defecto (cambio pedido tras la primera entrega de T18), con la URL en un único sitio y un setup global de Vitest que crea la base si falta.
 - [x] README y CLAUDE.md mencionan el comportamiento.
 
 ## Notas para el implementador
@@ -28,3 +28,4 @@ Como operador, quiero que el servicio cree su base de datos `clinicsay` al arran
 - **Hallazgo en la carrera.** Dos `CREATE DATABASE` simultáneos no siempre fallan con `42P04`: Postgres puede devolver `23505` (`pg_database_datname_index`). El test concurrente lo destapó, así que se ignoran ambos códigos (`RACE_CODES`).
 - **Cableado.** `main.ts` la llama antes de crear el `Pool` y migrar, y loguea "Base de datos creada" solo si la creó. `docker-compose.yml` (servicio `api`) y `.env.example` pasan a `.../clinicsay`; `provider` y la base de los tests no se tocan. README y CLAUDE.md lo mencionan y aclaran que los tests usan su propia base (`postgres`).
 - **Comprobación.** `npm run lint`, `typecheck`, `npm test` (328 tests), `build` y `dup` (0 clones) pasan. De punta a punta: `DROP DATABASE clinicsay`, `docker compose up --build -d api` -> `/health` 200, logs "Base de datos creada" y "Migraciones aplicadas", `clinicsay` aparece en `psql -l`; tras `docker compose restart api` vuelve a 200 sin el log de creación. Api parado al final; db y provider arriba.
+- Orquestador (cambio posterior): los tests pasan a usar `clinicsay` por defecto. La URL por defecto, antes repetida en 9 archivos, vive ahora solo en `test/support/database-url.ts`; `test/support/global-setup.ts` (globalSetup de Vitest) llama a `ensureDatabase` antes de los tests; el CI usa `.../clinicsay`. README y CLAUDE.md avisan de que `npm test` vacía las tablas de `clinicsay`.

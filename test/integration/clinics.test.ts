@@ -1,3 +1,4 @@
+import { TEST_DATABASE_URL } from '../support/database-url.js';
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import request from 'supertest';
@@ -9,7 +10,7 @@ import { KyselyClinicRepository } from '../../src/infrastructure/db/kysely-clini
 import { migrate } from '../../src/infrastructure/db/migrator.js';
 
 const databaseUrl =
-  process.env['DATABASE_URL'] ?? 'postgres://postgres:postgres@localhost:5432/postgres';
+  TEST_DATABASE_URL;
 const pool = new Pool({ connectionString: databaseUrl });
 const db = createDb(pool);
 const repository = new KyselyClinicRepository(db);

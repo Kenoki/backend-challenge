@@ -1,3 +1,4 @@
+import { TEST_DATABASE_URL } from '../support/database-url.js';
 import { Pool } from 'pg';
 import request from 'supertest';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -5,7 +6,7 @@ import { createApp } from '../../src/http/app.js';
 import { migrate } from '../../src/infrastructure/db/migrator.js';
 
 const databaseUrl =
-  process.env['DATABASE_URL'] ?? 'postgres://postgres:postgres@localhost:5432/postgres';
+  TEST_DATABASE_URL;
 const pool = new Pool({ connectionString: databaseUrl });
 
 afterAll(async () => {
